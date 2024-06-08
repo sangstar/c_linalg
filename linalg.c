@@ -2,10 +2,6 @@
 #include <stdlib.h>
 #include "linalg.h"
 
-struct vector {
-    int size;
-    float* elements;
-};
 
 struct vector create_vector(float* elems, size_t size) {
     struct vector v;
@@ -40,11 +36,11 @@ float dot_product(struct vector a, struct vector b) {
 
 int main() {
     float arr_a[3] = {1.f,2.f,3.f};
-    struct vector a = create_vector(arr_a, ARRLEN(arr_a));
+    struct vector a = TO_VECTOR(arr_a);
     print_vector(a);
 
     float arr_b[3] = {1.f,2.f,3.f};
-    struct vector b = create_vector(arr_b, ARRLEN(arr_b));
+    struct vector b = TO_VECTOR(arr_b);
 
     printf("%f",dot_product(a, b));
     return 0;

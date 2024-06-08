@@ -1,4 +1,5 @@
 #define ARRLEN(x)  (sizeof(x) / sizeof((x)[0]))
+#define TO_VECTOR(x)  create_vector(x, ARRLEN(x))
 
 #ifndef LINALG_H
 #define LINALG_H
