@@ -6,13 +6,14 @@
 
 #include <stddef.h>
 
-struct vector {
+
+typedef struct {
     int size;
     float* elements;
-};
+} vector;
 
-struct vector create_vector(float* elems, size_t size);
-void print_vector(struct vector v);
-float dot_product(struct vector a, struct vector b);
+vector create_vector(float* elems, size_t size);
+void print_vector(vector v);
+float dot_product(vector a, vector b);
 
 #endif /* MATH_H */

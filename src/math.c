@@ -3,15 +3,15 @@
 #include "math.h"
 
 
-struct vector create_vector(float* elems, size_t size) {
-    struct vector v;
+vector create_vector(float* elems, size_t size) {
+    vector v;
     v.size = size;
     v.elements = elems;
     return v;
 };
 
 
-void print_vector(struct vector v) {
+void print_vector(vector v) {
     printf("[");
     for (int i = 0; i < v.size; ++i) {
         printf("%f", v.elements[i]);
@@ -22,7 +22,7 @@ void print_vector(struct vector v) {
     printf("]\n");
 }
 
-float dot_product(struct vector a, struct vector b) {
+float dot_product(vector a, vector b) {
     float result = 0.f;
     if (a.size != b.size) {
         printf("Sizes are incompatible for dot products: (%i, %i)", a.size, b.size);
