@@ -24,6 +24,7 @@ the "self" name in Python for an object to refer to itself.
 Let's start by defining the struct as a PyVectorObject
 
 */
+
 typedef struct {
     PyObject_HEAD
     vector vec;
@@ -51,6 +52,7 @@ and implements its destructor. So essentially, the deallocator says:
 
 "Convert my custom object back in to a PyObject, and then call its deallocation function"
 */
+
 static void PyVector_dealloc(PyVectorObject *self) {
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
@@ -160,7 +162,7 @@ ommitted is the same as specifying tp_alloc = PyType_GenericAlloc here.
 
 static PyTypeObject PyVectorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "vectormodule.PyVector",
+    .tp_name = "linalg.PyVector",
     .tp_basicsize = sizeof(PyVectorObject),
     .tp_itemsize = 0,
     .tp_dealloc = (destructor)PyVector_dealloc,
@@ -177,14 +179,6 @@ PyArgParseTuple to extract the objects so that we can expose
 the underlying C structs.
 */
 
-static PyObject* PyVector_print(PyObject* self, PyObject* args) {
-    PyVectorObject* vec;
-    if (!PyArg_ParseTuple(args, "O!", &PyVectorType, (PyObject**)&vec)) {
-        return NULL;
-    }
-    print_vector(vec->vec);
-    Py_RETURN_NONE;
-}
 
 static PyObject* PyVector_dot_product(PyObject* self, PyObject* args) {
     PyVectorObject* vec1;
@@ -200,9 +194,8 @@ static PyObject* PyVector_dot_product(PyObject* self, PyObject* args) {
 We then just need to declare methods using a PyMethodDef object.
 */
 
-static PyMethodDef vectormodule_methods[] = {
-    {"print_vector", PyVector_print, METH_VARARGS, "Print the vector"},
-    {"dot_product", PyVector_dot_product, METH_VARARGS, "Compute the dot product of two vectors"},
+static PyMethodDef linalg_methods[] = {
+    {"dot_product", PyVector_dot_product, METH_VARARGS, "Compute the dot product of two linalg"},
     {NULL, NULL, 0, NULL}  // Sentinel
 };
 
@@ -215,19 +208,19 @@ a PyModuleDef_HEAD_INIT macro field,
 */
 
 // Module definition and initialization
-static PyModuleDef vectormodule = {
+static PyModuleDef linalg = {
     PyModuleDef_HEAD_INIT,
-    .m_name = "vectormodule",
+    .m_name = "linalg",
 
     // Setting this to -1 means the module keeps all its state in
     // global variables.
     .m_size = -1,
-    .m_methods = vectormodule_methods,
+    .m_methods = linalg_methods,
 };
 
 // This macro declares that this function is the initialization function
 // for the python module.
-PyMODINIT_FUNC PyInit_vectormodule(void) {
+PyMODINIT_FUNC PyInit_linalg(void) {
     PyObject *m;
 
     // PyType_Ready takes the pointer for my PyVectorType 
@@ -236,9 +229,9 @@ PyMODINIT_FUNC PyInit_vectormodule(void) {
     if (PyType_Ready(&PyVectorType) < 0)
         return NULL;
 
-    // Creates a Python module as per the vectormodule struct's
+    // Creates a Python module as per the linalg struct's
     // specifications defined above. Returns NULL if it fails.
-    m = PyModule_Create(&vectormodule);
+    m = PyModule_Create(&linalg);
     if (m == NULL)
         return NULL;
 
@@ -247,7 +240,7 @@ PyMODINIT_FUNC PyInit_vectormodule(void) {
     // to the garbage collector, which deletes anything with a 0
     // reference count, so let's incremenet to ensure it doesn't.
     Py_INCREF(&PyVectorType);
-    PyModule_AddObject(m, "PyVector", (PyObject *)&PyVectorType);
+    PyModule_AddObject(m, "Vector", (PyObject *)&PyVectorType);
     return m;
 }
 
