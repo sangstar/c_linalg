@@ -3,7 +3,7 @@
 #include "math.h"
 
 
-vector create_vector(float* elems, size_t size) {
+extern vector create_vector(float* elems, size_t size) {
     vector v;
     v.size = size;
     v.elements = elems;
@@ -11,7 +11,7 @@ vector create_vector(float* elems, size_t size) {
 };
 
 
-void print_vector(vector v) {
+extern void print_vector(vector v) {
     printf("[");
     for (int i = 0; i < v.size; ++i) {
         printf("%f", v.elements[i]);
@@ -22,7 +22,7 @@ void print_vector(vector v) {
     printf("]\n");
 }
 
-float dot_product(vector a, vector b) {
+extern float dot_product(vector a, vector b) {
     float result = 0.f;
     if (a.size != b.size) {
         printf("Sizes are incompatible for dot products: (%i, %i)", a.size, b.size);

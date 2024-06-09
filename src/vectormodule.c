@@ -169,11 +169,46 @@ static PyTypeObject PyVectorType = {
     .tp_init = (initproc)PyVector_init,  // Custom initialization function
 };
 
+/* 
+Let's now add some Python wrappers for our functions in math.c 
 
+This is not a particularly painful process. We mostly just need to
+PyArgParseTuple to extract the objects so that we can expose
+the underlying C structs.
+*/
+
+static PyObject* PyVector_print(PyObject* self, PyObject* args) {
+    PyVectorObject* vec;
+    if (!PyArg_ParseTuple(args, "O!", &PyVectorType, (PyObject**)&vec)) {
+        return NULL;
+    }
+    print_vector(vec->vec);
+    Py_RETURN_NONE;
+}
+
+static PyObject* PyVector_dot_product(PyObject* self, PyObject* args) {
+    PyVectorObject* vec1;
+    PyVectorObject* vec2;
+    if (!PyArg_ParseTuple(args, "O!O!", &PyVectorType, (PyObject**)&vec1, &PyVectorType, (PyObject**)&vec2)) {
+        return NULL;
+    }
+    float result = dot_product(vec1->vec, vec2->vec);
+    return PyFloat_FromDouble(result);
+}
 
 /*
-Now we have our custom type implemented. We just need to now create and initialized
-our module.
+We then just need to declare methods using a PyMethodDef object.
+*/
+
+static PyMethodDef vectormodule_methods[] = {
+    {"print_vector", PyVector_print, METH_VARARGS, "Print the vector"},
+    {"dot_product", PyVector_dot_product, METH_VARARGS, "Compute the dot product of two vectors"},
+    {NULL, NULL, 0, NULL}  // Sentinel
+};
+
+/*
+Now we have our custom type and some functions implemented. 
+We just need to now create and initialized our module.
 
 To do that, we are meant to provide a PyModuleDef struct with the module name,
 a PyModuleDef_HEAD_INIT macro field, 
@@ -187,6 +222,7 @@ static PyModuleDef vectormodule = {
     // Setting this to -1 means the module keeps all its state in
     // global variables.
     .m_size = -1,
+    .m_methods = vectormodule_methods,
 };
 
 // This macro declares that this function is the initialization function

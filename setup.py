@@ -1,7 +1,7 @@
 from setuptools import setup, Extension
 
 module = Extension('vectormodule',
-                   sources=['src/vectormodule.c'],
+                   sources=['src/vectormodule.c', 'src/math.c'],
                    include_dirs=['.'])  # Assuming vector.h is in the same directory
 
 setup(name='VectorModule',
