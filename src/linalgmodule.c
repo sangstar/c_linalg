@@ -2,6 +2,8 @@
 #include "linalg.h"
 #include "Python.h"
 
+// TODO: Add matrix pyobjects, add matmul on the python side and add printing for matrices
+
 /* 
 When exposing a struct from C to the Python API, you need to do the following:
 
@@ -186,7 +188,7 @@ static PyObject* PyVector_dot_product(PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "O!O!", &PyVectorType, (PyObject**)&vec1, &PyVectorType, (PyObject**)&vec2)) {
         return NULL;
     }
-    float result = dot_product(vec1->vec, vec2->vec);
+    float result = dot_product(&vec1->vec, &vec2->vec);
     return PyFloat_FromDouble(result);
 }
 
