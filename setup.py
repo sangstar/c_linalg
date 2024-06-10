@@ -2,9 +2,9 @@ from setuptools import setup, Extension
 
 module = Extension('linalg',
                    sources=['src/linalgmodule.c', 'src/linalg.c'],
-                   include_dirs=['.'])  # Assuming vector.h is in the same directory
+                   include_dirs=['.'])
 
-setup(name='VectorModule',
+setup(name='LinalgModule',
       version='1.0',
-      description='A module that provides a vector type implemented in C',
+      description='A module that provides linear algebra operations implemented in C',
       ext_modules=[module])
