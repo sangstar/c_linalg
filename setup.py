@@ -1,7 +1,7 @@
 from setuptools import setup, Extension
 
 module = Extension('linalg',
-                   sources=['src/linalgmodule.c', 'src/math.c'],
+                   sources=['src/linalgmodule.c', 'src/linalg.c'],
                    include_dirs=['.'])  # Assuming vector.h is in the same directory
 
 setup(name='VectorModule',

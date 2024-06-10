@@ -1,8 +1,8 @@
 #define ARRLEN(x)  (sizeof(x) / sizeof((x)[0]))
 #define TO_VECTOR(x)  create_vector(x, ARRLEN(x))
 
-#ifndef MATH_H
-#define MATH_H
+#ifndef LINALG_H
+#define LINALG_H
 
 #include <stddef.h>
 
@@ -25,6 +25,14 @@ typedef struct {
 
 vector create_vector(float* elems, size_t size);
 void print_vector(vector v);
-float dot_product(vector a, vector b);
+float dot_product(vector *a, vector *b);
 
-#endif /* MATH_H */
+typedef struct {
+    vector* vectors;
+    int num_rows;
+    int num_cols;
+} matrix;
+matrix create_matrix(vector* vectors, size_t num_vectors);
+matrix matmul(matrix *a, matrix *b);
+
+#endif /* LINALG_H */

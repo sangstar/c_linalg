@@ -1,5 +1,5 @@
 #define PY_SSIZE_T_CLEAN
-#include "math.h"
+#include "linalg.h"
 #include "Python.h"
 
 /* 
