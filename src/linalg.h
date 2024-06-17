@@ -33,6 +33,7 @@ typedef struct {
     int num_cols;
 } matrix;
 matrix create_matrix(vector* vectors, size_t num_vectors);
-matrix matmul(matrix *a, matrix *b);
+matrix* matmul(matrix *a, matrix *b);
+void free_matrix(matrix* mat);
 
 #endif /* LINALG_H */

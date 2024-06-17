@@ -23,6 +23,10 @@ extern matrix create_matrix(vector* vectors, size_t num_vectors) {
     return mat;
 }
 
+extern void free_matrix(matrix* mat) {
+    free(mat->vectors);
+}
+
 
 extern void print_vector(vector v) {
     printf("[");
@@ -49,7 +53,7 @@ extern float dot_product(vector *a, vector *b) {
     return result;
 };
 
-extern matrix matmul(matrix *a, matrix *b) {
+extern matrix* matmul(matrix *a, matrix *b) {
     // Allocate enough row vectors to match num_cols of b
     matrix *c = (matrix *)malloc(sizeof(matrix) * b->num_cols);
 
@@ -87,5 +91,5 @@ extern matrix matmul(matrix *a, matrix *b) {
         c->vectors[i] = *current_vec;
         free(current_vec); // Free the memory allocated for current_vec
     }
-    return *c; // Return the result matrix
+    return c; // Return the result matrix
 }

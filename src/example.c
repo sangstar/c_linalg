@@ -29,7 +29,7 @@ int main() {
     vectors_b[1] = d;
     matrix mat_b = create_matrix(vectors_b, num_vectors);
 
-    matrix mat_c = matmul(&mat_a, &mat_b);
+    matrix *mat_c = matmul(&mat_a, &mat_b);
 //    free(mat_a.vectors);
 //    free(mat_b.vectors);
 //    free(mat_c.vectors);

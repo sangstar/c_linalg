@@ -32,6 +32,12 @@ typedef struct {
     vector vec;
 } PyVectorObject;
 
+typedef struct {
+    PyObject_HEAD
+    int num_rows;
+    PyVectorObject **vectors;
+} PyMatrixObject;
+
 /* 
 Let's make sure this next part makes sense to the reader, as the function body may 
 look a bit daunting.
@@ -56,6 +62,10 @@ and implements its destructor. So essentially, the deallocator says:
 */
 
 static void PyVector_dealloc(PyVectorObject *self) {
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static void PyMatrix_dealloc(PyMatrixObject *self) {
     Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
@@ -110,7 +120,7 @@ static int PyVector_init(PyVectorObject *self, PyObject *args) {
     for (Py_ssize_t i = 0; i < size; i++) {
         PyObject *item = PyList_GetItem(input_list, i);
         if (!PyFloat_Check(item)) {
-            PyErr_SetString(PyExc_TypeError, "Elements must of type float");
+            PyErr_SetString(PyExc_TypeError, "Elements must be of type float");
             // Still need to free the dynamically allocated vec.elements to prevent mem leaks
             free(self->vec.elements);
             return -1;
@@ -154,6 +164,18 @@ static PyObject *PyVector_new(PyTypeObject *type, PyObject *args, PyObject *kwds
     return (PyObject *)self;
 }
 
+static PyObject *PyMatrix_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+    PyMatrixObject *self;
+    self = (PyMatrixObject *)type->tp_alloc(type, 0);
+
+    if (self != NULL) {
+        self->num_rows = 0;
+        self->vectors = NULL;
+    }
+
+    return (PyObject *)self;
+}
+
 /* 
 When a `PyVectorObject` is created, `tp_new` is called, using our previously
 created PyVector_new function, where the PyTypeObject passed is below.
@@ -164,13 +186,65 @@ ommitted is the same as specifying tp_alloc = PyType_GenericAlloc here.
 
 static PyTypeObject PyVectorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "linalg.PyVector",
+    .tp_name = "linalg.Vector",
     .tp_basicsize = sizeof(PyVectorObject),
     .tp_itemsize = 0,
     .tp_dealloc = (destructor)PyVector_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_new = PyVector_new,
     .tp_init = (initproc)PyVector_init,  // Custom initialization function
+};
+
+
+static int PyMatrix_init(PyMatrixObject *self, PyObject *args) {
+
+    PyObject *pyvector_list = NULL;
+
+
+    if (!PyArg_ParseTuple(args, "O", &pyvector_list)) {
+        return -1;
+    }
+
+    if (!PyList_Check(pyvector_list)) {
+        PyErr_SetString(PyExc_TypeError, "Parameters must be a list of Vectors.");
+        return -1;
+    }
+
+    Py_ssize_t size = PyList_Size(pyvector_list);
+
+
+    self->num_rows = (int)size;
+    self->vectors = (PyVectorObject **)malloc(sizeof(PyVectorObject) * size);
+
+    if (self->vectors == NULL) {
+        PyErr_SetString(PyExc_MemoryError, "Unable to allocate memory for vectors.");
+        return -1;
+    }
+
+    for (Py_ssize_t i = 0; i < size; i++) {
+        PyObject *item = PyList_GetItem(pyvector_list, i);
+        if (!(PyObject_TypeCheck(item, &PyVectorType))) {
+            PyErr_SetString(PyExc_TypeError, "Elements must of type Vector");
+            // Still need to free the dynamically allocated vec.elements to prevent mem leaks
+            free(self->vectors);
+            return -1;
+        }
+        Py_INCREF(item);
+        self->vectors[i] = (PyVectorObject *)item;
+    }
+
+    return 0;
+}
+
+static PyTypeObject PyMatrixType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "linalg.Matrix",
+    .tp_basicsize = sizeof(PyMatrixObject),
+    .tp_itemsize = 0,
+    .tp_dealloc = (destructor)PyMatrix_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = PyMatrix_new,
+    .tp_init = (initproc)PyMatrix_init,  // Custom initialization function
 };
 
 /* 
@@ -196,8 +270,68 @@ static PyObject* PyVector_dot_product(PyObject* self, PyObject* args) {
 We then just need to declare methods using a PyMethodDef object.
 */
 
+static PyVectorObject* PyVector_FromVector(vector* v) {
+    PyVectorObject* pyvec = NULL;
+    pyvec->vec = *v;
+
+    return pyvec;
+
+}
+
+static PyMatrixObject* PyMatrixObject_FromMatrix(matrix* mat) {
+    PyMatrixObject* pymat;
+
+    pymat->num_rows = mat->num_rows;
+
+    for (int i = 0; i < mat->num_rows; ++i) {
+        pymat->vectors[i] = PyVector_FromVector(&mat->vectors[i]);
+    }
+
+    free_matrix(mat);
+    return pymat;
+}
+
+static matrix* PyMatrixObject_ToMatrix(PyMatrixObject* pymat) {
+    matrix *c = malloc(sizeof(matrix));
+    if (!c) return NULL; 
+
+    c->num_rows = (int)pymat->num_rows;
+    c->vectors = malloc(c->num_rows * sizeof(vector*));
+    if (!c->vectors) {
+        free(c);
+        return NULL;
+    }
+
+    for (int i = 0; i < c->num_rows; ++i) {
+        c->vectors[i] = pymat->vectors[i]->vec;
+    }
+
+    return c;
+}
+
+static PyObject* PyMatrix_matmul(PyObject* self, PyObject* args) {
+    PyMatrixObject* a;
+    PyMatrixObject* b;
+
+    if (!PyArg_ParseTuple(args, "O!O!", &PyMatrixType, &a, &PyMatrixType, &b)) {
+        PyErr_SetString(PyExc_ValueError, "Failed to unpack matrix arguments");
+        return NULL;
+    }
+
+    matrix *mat_a = PyMatrixObject_ToMatrix(a);
+    matrix *mat_b = PyMatrixObject_ToMatrix(b);
+
+    matrix *mat_c = matmul(mat_a, mat_b);
+
+    PyMatrixObject* result = PyMatrixObject_FromMatrix(mat_c);
+
+    return (PyObject *)result;
+
+}
+
 static PyMethodDef linalg_methods[] = {
     {"dot_product", PyVector_dot_product, METH_VARARGS, "Compute the dot product of two linalg"},
+    {"matmul", PyMatrix_matmul, METH_VARARGS, "Multiply two matrices"},
     {NULL, NULL, 0, NULL}  // Sentinel
 };
 
@@ -231,6 +365,9 @@ PyMODINIT_FUNC PyInit_linalg(void) {
     if (PyType_Ready(&PyVectorType) < 0)
         return NULL;
 
+    if (PyType_Ready(&PyMatrixType) < 0)
+        return NULL;
+
     // Creates a Python module as per the linalg struct's
     // specifications defined above. Returns NULL if it fails.
     m = PyModule_Create(&linalg);
@@ -243,6 +380,9 @@ PyMODINIT_FUNC PyInit_linalg(void) {
     // reference count, so let's incremenet to ensure it doesn't.
     Py_INCREF(&PyVectorType);
     PyModule_AddObject(m, "Vector", (PyObject *)&PyVectorType);
+
+    Py_INCREF(&PyMatrixType);
+    PyModule_AddObject(m, "Matrix", (PyObject *)&PyMatrixType);
     return m;
 }
 
