@@ -1,5 +1,7 @@
 import linalg
 
+print("HELLO")
+
 vec1 = linalg.Vector([1.0, 2.0])
 vec2 = linalg.Vector([1.0, 3.0])
 
@@ -11,7 +13,5 @@ print(linalg.dot_product(vec1, vec2))
 mat_a = linalg.Matrix([vec1, vec2])
 
 mat_b = linalg.Matrix([vec3, vec4])
-
-print(mat_a, mat_b)
 
 linalg.matmul(mat_a, mat_b)

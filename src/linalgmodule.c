@@ -271,7 +271,7 @@ We then just need to declare methods using a PyMethodDef object.
 */
 
 static PyVectorObject* PyVector_FromVector(vector* v) {
-    PyVectorObject* pyvec = NULL;
+    PyVectorObject* pyvec = (PyVectorObject*)malloc(sizeof(PyVectorObject));
     pyvec->vec = *v;
 
     return pyvec;
@@ -279,9 +279,10 @@ static PyVectorObject* PyVector_FromVector(vector* v) {
 }
 
 static PyMatrixObject* PyMatrixObject_FromMatrix(matrix* mat) {
-    PyMatrixObject* pymat;
+    PyMatrixObject* pymat = (PyMatrixObject*)malloc(sizeof(PyMatrixObject));
 
     pymat->num_rows = mat->num_rows;
+    pymat->vectors = (PyVectorObject **)malloc(pymat->num_rows * sizeof(PyVectorObject));
 
     for (int i = 0; i < mat->num_rows; ++i) {
         pymat->vectors[i] = PyVector_FromVector(&mat->vectors[i]);
@@ -292,11 +293,12 @@ static PyMatrixObject* PyMatrixObject_FromMatrix(matrix* mat) {
 }
 
 static matrix* PyMatrixObject_ToMatrix(PyMatrixObject* pymat) {
-    matrix *c = malloc(sizeof(matrix));
+    matrix *c = (matrix *)malloc(sizeof(matrix));
     if (!c) return NULL; 
 
     c->num_rows = (int)pymat->num_rows;
-    c->vectors = malloc(c->num_rows * sizeof(vector*));
+    c->vectors = (vector *)malloc(c->num_rows * sizeof(vector*));
+    c->num_cols = (int)pymat->vectors[0]->vec.size;
     if (!c->vectors) {
         free(c);
         return NULL;
@@ -310,24 +312,26 @@ static matrix* PyMatrixObject_ToMatrix(PyMatrixObject* pymat) {
 }
 
 static PyObject* PyMatrix_matmul(PyObject* self, PyObject* args) {
-    PyMatrixObject* a;
-    PyMatrixObject* b;
+    PyMatrixObject* other;
 
-    if (!PyArg_ParseTuple(args, "O!O!", &PyMatrixType, &a, &PyMatrixType, &b)) {
+    if (!PyArg_ParseTuple(args, "O!O!", &PyMatrixType, (PyObject **)&self, &PyMatrixType, (PyObject **)&other)) {
         PyErr_SetString(PyExc_ValueError, "Failed to unpack matrix arguments");
         return NULL;
     }
 
-    matrix *mat_a = PyMatrixObject_ToMatrix(a);
-    matrix *mat_b = PyMatrixObject_ToMatrix(b);
+    matrix *mat_a = PyMatrixObject_ToMatrix((PyMatrixObject *)self);
+    matrix *mat_b = PyMatrixObject_ToMatrix((PyMatrixObject *)other);
+
+    printf("Matrix A: %d x %d\n", mat_a->num_rows, mat_a->num_cols);
+    printf("Matrix B: %d x %d\n", mat_b->num_rows, mat_b->num_cols);
 
     matrix *mat_c = matmul(mat_a, mat_b);
 
     PyMatrixObject* result = PyMatrixObject_FromMatrix(mat_c);
 
     return (PyObject *)result;
-
 }
+
 
 static PyMethodDef linalg_methods[] = {
     {"dot_product", PyVector_dot_product, METH_VARARGS, "Compute the dot product of two linalg"},
